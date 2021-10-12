@@ -26,7 +26,7 @@ def makefits(myimagebase, cleanup=True):
 #====================================
 fld = 'N' # change to 'M' as needed
 conf = 'B3' # change to 'B6' as needed
-step = 0 # change to 1/2/3. 
+step = 1 # change to 1/2/3. 
 # 0 - initial clean
 # 1 - p,inf cal + clean
 # 2 - p,int cal + clean
@@ -53,12 +53,12 @@ if conf == 'B6':
     threshold='3.0mJy'
 
 if fldconf == 'NB3':
-    mslist = ['N_cont1.ms','N_cont2.ms']
+    mslist_original = ['N_cont1.ms','N_cont2.ms']
 elif fldconf == 'MB3':
-    mslist = ['M_cont1.ms','M_cont2.ms']
+    mslist_original = ['M_cont1.ms','M_cont2.ms']
 elif fldcong == 'NB6':
     mslist = ['N_B6_cont1.ms','N_B6_cont2.ms']
-else: mslist = ['M_B6_cont1.ms','M_B6_cont2.ms']
+else: mslist_original = ['M_B6_cont1.ms','M_B6_cont2.ms']
 
 
 cal = 'cal'+str(step)
@@ -73,8 +73,9 @@ elif step == 3:
     solint='15s'
     calmode='ap'
 
-mslist = [s + '_cal' + str(step) for s in mslist]
+mslist = [s + '_cal' + str(step-1) for s in mslist_original]
 print("The folders are: " + str(mslist))
+new_mslist=[mslist_original[0]+'_cal'+str(step),mslist_original[1]+'_cal'+str(step)]
 
 source_spws = (0,1,2,3)
 
@@ -99,9 +100,116 @@ start=''
 
 imagename = 'sgr_b2.{0}.{1}.cont.r{2}.{3}.{4}'.format(fld, conf, robust, suffix, cal)
 
+
+if step == 0:
+    if not os.path.exists("{0}.image.tt0.pbcor.fits".format(imagename)):
+        print("Imaging {0} at {1}".format(imagename, datetime.datetime.now()))
+        tclean(vis=mslist,
+               imagename=imagename,
+               spw=[spwtext, spwtext],
+               field=field,
+               specmode=specmode,
+               start=start,
+               outframe=outframe,
+               threshold=threshold,
+               imsize=imsize,
+               cell=cell,
+               niter=niter,
+               deconvolver=deconvolver,
+               nterms=nterms,
+               gridder=gridder,
+               weighting=weighting,
+               robust=robust,
+               pbcor=pbcor,
+               mask=mask,
+               pblimit=pblimit,
+               savemodel=savemodel,
+               interactive=interactive)
+        makefits(imagename)
+    
+
+    split(vis=mslist[0],
+          outputvis=new_mslist[0],
+          datacolumn='corrected')
+    split(vis=mslist[1],
+          outputvis=new_mslist[1],
+          datacolumn='corrected')
+    print('No calibration. Exiting')
+    sys.exit()
+
+gaintype='T'
+refant='DV09'
+combine='spw'
+spwcont='0,1,2,3'
+minsnr=3.0
+minblperant=4
+
+spwmap=[0,0,0,0]
+calwt=False
+flagbackup=True
+applymode='calonly'
+
+tbl1='pcal'+fld+conf+str(step)+'_1'
+tbl2='pcal'+fld+conf+str(step)+'_2'
+
+os.system('rm -r tbl1')
+os.system('rm -r tbl2')
+
+
+gaincal(vis=mslist[0],
+        caltable=tbl1,
+        gaintype=gaintype,
+        refant=refant,
+        calmode=calmode,
+        combine=combine,
+        spw=spwcont,
+        solint=solint,
+        minsnr=minsnr,
+        minblperant=minblperant)
+
+gaincal(vis=mslist[1],
+        caltable=tbl2,
+        gaintype=gaintype,
+        refant=refant,
+        calmode=calmode,
+        combine=combine,
+        spw=spwcont,
+        solint=solint,
+        minsnr=minsnr,
+        minblperant=minblperant)
+
+
+applycal(vis=mslist[0],
+         spwmap=spwmap,
+         gaintable=[tbl1],
+         calwt=calwt,
+         flagbackup=flagbackup,
+         applymode=applymode)
+
+applycal(vis=mslist[1],
+         spwmap=spwmap,
+         gaintable=[tbl2],
+         calwt=calwt,
+         flagbackup=flagbackup,
+         applymode=applymode)
+
+#if step == 3:
+#    print('No splitting (last iteration). Exiting')
+#    sys.exit()
+
+new_mslist=[mslist[0]+'_cal'+str(step+1),mslist[1]+'_cal'+str(step+1)]
+
+split(vis=mslist[0],
+      outputvis=new_mslist[0],
+      datacolumn='corrected')
+split(vis=mslist[1],
+      outputvis=new_mslist[1],
+      datacolumn='corrected')
+
+
 if not os.path.exists("{0}.image.tt0.pbcor.fits".format(imagename)):
     print("Imaging {0} at {1}".format(imagename, datetime.datetime.now()))
-    tclean(vis=mslist,
+    tclean(vis=new_mslist,
         imagename=imagename,
                    spw=[spwtext, spwtext],
                    field=field,
@@ -125,74 +233,3 @@ if not os.path.exists("{0}.image.tt0.pbcor.fits".format(imagename)):
     makefits(imagename)
 else:
     print("This file already exists")
-
-if step == 0:
-    print('No calibration. Exiting')
-    sys.exit()
-
-gaintype='T'
-refant='DV09'
-combine='spw'
-spw=spwcont
-minsnr=3.0
-minblperant=4
-
-spwmap=[0,0,0,0]
-calwt=False
-flagbackup=True
-applymode='calonly'
-
-tbl1='pcal'+fld+conf+str(step)+'_1'
-tbl2='pcal'+fld+conf+str(step)+'_2'
-
-os.system('rm -r tbl1')
-os.system('rm -r tbl2')
-
-
-gaincal(vis=mslist[0],
-        caltable=tbl1,
-        gaintype=gaintype,
-        refant=refant,
-        calmode=calmode,
-        combine=combine,
-        spw=spw,
-        solint=solint,
-        minsnr=minsnr,
-        minblperant=minblperant)
-
-gaincal(vis=mslist[1],
-        caltable=tbl2,
-        gaintype=gaintype,
-        refant=refant,
-        calmode=calmode,
-        combine=combine,
-        spw=spw,
-        solint=solint,
-        minsnr=minsnr,
-        minblperant=minblperant)
-
-
-applycal(vis=mslist[0],
-         spwmap=spwmap,
-         gaintable=[tbl1],
-         calwt=calwt,
-         flagbackup=flagbackup,
-         applymode=applymode)
-
-applycal(vis=mslist[1],
-         spwmap=spwmap,
-         gaintable=[tbl2],
-         calwt=calwt,
-         flagbackup=flagbackup,
-         applymode=applymode)
-
-if step == 3:
-    print('No splitting (last iteration). Exiting')
-    sys.exit()
-
-split(vis=mslist[0],
-      outputvis=mslist[0]+'_cal'+str(step+1),
-      datacolumn='corrected')
-split(vis=mslist[1],
-      outputvis=mslist[1]+'_cal'+str(step+1),
-      datacolumn='corrected')
