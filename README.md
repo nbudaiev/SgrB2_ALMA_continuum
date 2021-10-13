@@ -1,3 +1,1 @@
-# sedfit
-SED model grid and fitting tools for fitting SEDs of massive protostars
-# SgrB2_ALMA_continuum
+Data reduction and source extraction of SgrB2 ALMA 1 and 3 mm continuum data.
