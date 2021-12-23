@@ -23,9 +23,9 @@ def makefits(myimagebase, cleanup=True):
 # Scripit to reduce all cont data.
 
 #====================================
-fld = 'N' # change to N/M as needed
-conf = 'B6' # change to B3/B6 as needed
-step = 3 # change to 1/2/3. 
+fld = 'M' # change to N/M as needed
+conf = 'B3' # change to B3/B6 as needed
+step = 1 # change to 1/2/3. 
 # 0 - initial clean
 # 1 - p,inf cal + clean
 # 2 - p,int cal + clean
@@ -43,22 +43,14 @@ mask = 'SgrB2'+fldconf+'_regions.crtf'
 if conf == 'B3':
     imsize = [6144, 6144] #adjust?
     cell = ['0.018arcsec']
-    threshold='0.1mJy'
+    threshold='0.2mJy' # 0.1 for N, 0.2 for M
 
 if conf == 'B6':
     imsize = [4500,4500]
     cell =  ['0.01arcsec']
-    threshold='3.0mJy'
+    threshold='4.0mJy' #3 mJy for N, 4 for M
 
 
-# Can be simplified to one line like "mask" if the .ms are named properly.
-#if fldconf == 'NB3':
-#    mslist_original = ['N_cont1.ms','N_cont2.ms']
-#elif fldconf == 'MB3':
-#    mslist_original = ['M_cont1.ms','M_cont2.ms']
-#elif fldcong == 'NB6':
-#    mslist_original = ['N_B6_cont1.ms','N_B6_cont2.ms']
-#else: mslist_original = ['M_B6_cont1.ms','M_B6_cont2.ms']
 
 ms1=fld+'_'+conf+'_cont1.ms'
 ms2=fld+'_'+conf+'_cont2.ms'
@@ -69,7 +61,7 @@ mslist_original = [ms1,ms2]
 cal = 'cal'+str(step)
 
 if step == 1:
-    solint='inf'
+    solint='int' #THIS IS TEMP. CHANGE BACK TO INF
     calmode='p'
 elif step == 2:
     solint='int'
@@ -147,7 +139,8 @@ if step == 0:
     sys.exit()
 
 gaintype='T'
-refant='DV09'
+#refant='DV20, DV24' #this is experimental
+refant='DV09,DA61,DV06'
 combine='spw'
 spwcont='0,1,2,3'
 minsnr=3.0
@@ -194,7 +187,8 @@ applycal(vis=mslist[0],
          gaintable=[tbl1],
          calwt=calwt,
          flagbackup=flagbackup,
-         applymode=applymode)
+         applymode=applymode,
+         antenna='!DA48,DV22')
 
 applycal(vis=mslist[1],
          spwmap=spwmap,
@@ -202,10 +196,6 @@ applycal(vis=mslist[1],
          calwt=calwt,
          flagbackup=flagbackup,
          applymode=applymode)
-
-#if step == 3:
-#    print('No splitting (last iteration). Exiting')
-#    sys.exit()
 
 os.system('rm -r '+new_mslist[0])
 os.system('rm -r '+new_mslist[1])
