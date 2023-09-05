@@ -1,5 +1,5 @@
 # Region file format: DS9 astropy/regions
-global select=1 source=1 delete=1 width=2 include=1 font="helvetica 10 normal roman" move=1 highlite=1 color=#2EE6D6 edit=1 fixed=0
+global color=#2EE6D6 include=1 source=1 select=1 move=1 highlite=1 fixed=0 delete=1 font="helvetica 10 normal roman" width=2 edit=1
 icrs
 ellipse(266.83975941,-28.39892405,5.80068862e-06,5.01423149e-06,140.53609899) # text={source_361}
 ellipse(266.83879499,-28.39916005,6.22979329e-06,4.47747085e-06,74.13242539) # text={source_359}
