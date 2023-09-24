@@ -1,6 +1,7 @@
 Data reduction and source extraction of SgrB2 ALMA 1 and 3 mm continuum data.
 
 Included files:
+
 catXXX_full.dat: published catalogs. The catalogs contain reviewed cores and HII regions.
 catalog_XXX_4RMS..: astrodendro generated catalog with manually reviewed scores.
 SgrB2XXX_regions.crtf: masks used during cleaning.
